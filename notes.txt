@@ -1,0 +1,9 @@
+TO DO
+[] need api call for getting eth balance
+[] need api call for getting dollar balance
+[] need api call for getting non-eth token balance on eth chain
+[] factor all time high in eth holdings
+[] maybe don't need api calls when i can just inspect element etherscan
+
+OBJECTIVE
+To find the top eth profits from being early on a meme coin. These are most likely to be the insiders of said token. This technology will be used again for finding known Twitter accounts. Eventually this will be translated to other chains.
