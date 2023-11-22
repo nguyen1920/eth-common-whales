@@ -9,8 +9,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 import time
+import re
 
 def balances(url):
+    """
+    Web scrape etherscan for details and balances
+    """
     driver = webdriver.Firefox()
     driver.get(url)
 
@@ -45,7 +49,29 @@ def balances(url):
 
     return lastTXN,firstTXN,dropdownMenuBalance,high_bal_eth_value,high_bal_usd_value
 
+def cleanup(account_details):
+    """
+    Expects a list of 5 values and cleans up data for each entry
+    """
+    lastTXN = account_details[0]
+    firstTXN = account_details[1]
+    dropdownMenuBalance = account_details[2]
+    high_bal_eth_value = account_details[3]
+    high_bal_usd_value = account_details[4]
+
+    lastTXN = lastTXN.split()  #[0] from, [1] number, [2] days/hrs, [3] number, [4] hrs/mins, [5] ago
+    firstTXN = firstTXN.split()  #[0] from, [1] number, [2] days/hrs, [3] number, [4] hrs/mins, [5] ago
+    dropdownMenuBalance = dropdownMenuBalance.split()
+    dropdownMenuBalance = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', dropdownMenuBalance[0]).group().replace(",", "").replace("$", "")
+    high_bal_eth_value = high_bal_eth_value.split()[0]
+    high_bal_usd_value = high_bal_usd_value.split()[1].replace(",", "")
+
+    return lastTXN,firstTXN,dropdownMenuBalance,high_bal_eth_value,high_bal_usd_value
+
 def main():
+    """
+    Finds account details of address
+    """
     # URL of the web page
     #url = "https://etherscan.io/address/0xfa31a00a87c766579f0790be73c3763b3e952e94#analytics"
     url_base = "https://etherscan.io/address/"
@@ -56,8 +82,10 @@ def main():
     with open("UseMe.csv") as file:
       for item in file:
         url = url_base+item.strip()+"#analytics"
-        potential_addresses = balances(url)
-        f.write(url+","+str(potential_addresses)+"\n")
+        account_details = balances(url)
+        account_details = cleanup(account_details)
+        f.write(url+","+str(account_details[0])+","+str(account_details[1])+","+str(account_details[2])+","+str(account_details[3])+","+str(account_details[4])+"\n")
+        time.sleep(1)
 
     f.close()
 
