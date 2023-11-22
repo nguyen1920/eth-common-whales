@@ -1,9 +1,15 @@
 TO DO
-[] need api call for getting eth balance
-[] need api call for getting dollar balance
+[NA] 20231117: need api call for getting eth balance
+[NA] need api call for getting dollar balance
 [] need api call for getting non-eth token balance on eth chain
-[] factor all time high in eth holdings
-[] maybe don't need api calls when i can just inspect element etherscan
+[X] factor all time high in eth holdings
+[X] maybe don't need api calls when i can just inspect element etherscan
+[] 20231122: make headless version because base browser is too slow
+[] parse data to find actual whales
+[] feature to include recent buys/sells/swaps
 
 OBJECTIVE
-To find the top eth profits from being early on a meme coin. These are most likely to be the insiders of said token. This technology will be used again for finding known Twitter accounts. Eventually this will be translated to other chains.
+This is a proof of concept passion project because I love crypto! To find the top eth profits from being early on a meme coin. These are most likely to be the insiders of said token. This technology will be used again for finding known Twitter accounts. Eventually this will be translated to other chains.
+
+WARNING AND DISCLAIMER
+This project is NOT for use and the owner is NOT responsible for any damages that may occur.
