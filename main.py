@@ -46,6 +46,14 @@ def balances(url):
     list.append(lastTXN)
     list.append(firstTXN)
 
+
+    try:
+    	eth_value = driver.find_element(By.XPATH, "/html/body/main/section[3]/div[2]/div[1]/div/div/div[3]").get_attribute('innerHTML')
+    except:
+        eth_value = None
+        pass
+    list.append(eth_value)
+
     try:
         dropdownMenuBalance = driver.find_element(By.ID, "dropdownMenuBalance").get_attribute('innerHTML')
     except:
@@ -88,9 +96,10 @@ def cleanup(account_details):
     list = []
     lastTXN = account_details[0]
     firstTXN = account_details[1]
-    dropdownMenuBalance = account_details[2]
-    high_bal_eth_value = account_details[3]
-    high_bal_usd_value = account_details[4]
+    eth_value = account_details[2]
+    dropdownMenuBalance = account_details[3]
+    high_bal_eth_value = account_details[4]
+    high_bal_usd_value = account_details[5]
 
     if lastTXN is not None:
         lastTXN = lastTXN.split()  #[0] from, [1] number, [2] days/hrs, [3] number, [4] hrs/mins, [5] ago
@@ -104,6 +113,16 @@ def cleanup(account_details):
         list.append(firstTXN[2])
         list.append(firstTXN[3])
         list.append(firstTXN[4])
+    if eth_value is not None:
+        eth_value = eth_value.split()
+        current_usd_portfolio = eth_value[6]
+        current_eth_price = eth_value[10]
+        current_usd_portfolio = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', current_usd_portfolio).group().replace(",", "").replace("$", "")
+        current_eth_price = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', current_eth_price).group().replace(",", "").replace("$", "")
+        current_eth_portfolio = float(current_usd_portfolio)/float(current_eth_price)
+        list.append(current_eth_portfolio)
+        list.append(current_usd_portfolio)
+        list.append(current_eth_price)
     if dropdownMenuBalance is not None:
         dropdownMenuBalance = dropdownMenuBalance.split()
         dropdownMenuBalance = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', dropdownMenuBalance[0]).group().replace(",", "").replace("$", "")
@@ -125,10 +144,11 @@ def details_to_file(f,item,url,account_details):
     [4] - number of hrs/mins (lastTXN)      [5] - hrs/mins (lastTXN)
     [6] - number of days/hrs (firstTXN)     [7] - days/hrs (firstTXN)
     [8] - number of hrs/mins (firstTXN)     [9] - hrs/mins (firstTXN)
-    [10] - dropdownMenuBalance              [11] - ETH all time high
-    [12] - USD all time high
+    [10] - eth in current_eth_portfolio     [11] - money in current_usd_portfolio
+    [12] - current eth price                [13] - dropdownMenuBalance
+    [14] - ETH all time high                [15] - USD all time high
     """
-    f.write(item.strip()+","+url+","+str(account_details[0])+","+str(account_details[1])+","+str(account_details[2])+","+str(account_details[3])+","+str(account_details[4])+","+str(account_details[5])+","+str(account_details[6])+","+str(account_details[7])+","+str(account_details[8])+","+str(account_details[9])+","+str(account_details[10])+"\n")
+    f.write(item.strip()+","+url+","+str(account_details[0])+","+str(account_details[1])+","+str(account_details[2])+","+str(account_details[3])+","+str(account_details[4])+","+str(account_details[5])+","+str(account_details[6])+","+str(account_details[7])+","+str(account_details[8])+","+str(account_details[9])+","+str(account_details[10])+","+str(account_details[11])+","+str(account_details[12])+","+str(account_details[13])+"\n")
     return
 
 def main():
@@ -139,15 +159,19 @@ def main():
     #url = "https://etherscan.io/address/0xfa31a00a87c766579f0790be73c3763b3e952e94#analytics"
     url_base = "https://etherscan.io/address/"
 
-    f = open("demofile2.csv", "a")
-    with open("UseMe.csv") as file:
+    #f = open("demofile2.csv", "a")
+    f = open("results.csv", "w")
+    f.write("address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numhrsmins (lastTXN),hrsmins (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),numhrsmins (firstTXN),hrsmins (firstTXN),current_eth_portfolio,current_usd_portfolio,current_eth_price,dropdownMenuBalance,ethATH,usdATH\n")
+    i=1
+    with open("addresses.csv") as file: #addresses only, no column names
       for item in file:
         url = url_base+item.strip()+"#analytics"
         account_details = balances(url)
         account_details = cleanup(account_details)
         details_to_file(f,item,url,account_details)
         time.sleep(0.05)
-        print("success")
+        print("Success",i)
+        i=i+1
     f.close()
 
     #time.sleep(3)

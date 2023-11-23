@@ -1,0 +1,2 @@
+address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numhrsmins (lastTXN),hrsmins (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),numhrsmins (firstTXN),hrsmins (firstTXN),current_eth_portfolio,current_usd_portfolio,current_eth_price,dropdownMenuBalance,ethATH,usdATH
+0xb8f226ddb7bc672e27dffb67e4adabfa8c0dfa08,https://etherscan.io/address/0xb8f226ddb7bc672e27dffb67e4adabfa8c0dfa08#analytics,772,days,23,hrs,2103,days,23,hrs,5.859378782157416,12103.25,2065.62,1262.00,29.63417489646391,20568.22
