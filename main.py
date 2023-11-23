@@ -16,7 +16,9 @@ def balances(url):
     Web scrape etherscan for details and balances
     """
     list = []
-    driver = webdriver.Firefox()
+    options = webdriver.FirefoxOptions()
+    options.add_argument("-headless")
+    driver = webdriver.Firefox(options=options)
     driver.get(url)
 
     try:
@@ -145,6 +147,7 @@ def main():
         account_details = cleanup(account_details)
         details_to_file(f,item,url,account_details)
         time.sleep(0.05)
+        print("success")
     f.close()
 
     #time.sleep(3)
