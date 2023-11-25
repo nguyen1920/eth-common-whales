@@ -48,7 +48,7 @@ def balances(url):
 
 
     try:
-    	eth_value = driver.find_element(By.XPATH, "/html/body/main/section[3]/div[2]/div[1]/div/div/div[3]").get_attribute('innerHTML')
+    	eth_value = driver.find_element(By.XPATH, "/html/body/main/section[3]/div[2]/div[1]/div/div/div[2]/div/div").get_attribute('innerHTML')
     except:
         eth_value = None
         pass
@@ -105,34 +105,45 @@ def cleanup(account_details):
         lastTXN = lastTXN.split()  #[0] from, [1] number, [2] days/hrs, [3] number, [4] hrs/mins, [5] ago
         list.append(lastTXN[1])
         list.append(lastTXN[2])
-        list.append(lastTXN[3])
-        list.append(lastTXN[4])
+    else:
+        list.append(None)
+        list.append(None)
+
     if firstTXN is not None:
         firstTXN = firstTXN.split()  #[0] from, [1] number, [2] days/hrs, [3] number, [4] hrs/mins, [5] ago
         list.append(firstTXN[1])
         list.append(firstTXN[2])
-        list.append(firstTXN[3])
-        list.append(firstTXN[4])
+    else:
+        list.append(None)
+        list.append(None)
+
     if eth_value is not None:
         eth_value = eth_value.split()
-        current_usd_portfolio = eth_value[6]
-        current_eth_price = eth_value[10]
-        current_usd_portfolio = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', current_usd_portfolio).group().replace(",", "").replace("$", "")
-        current_eth_price = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', current_eth_price).group().replace(",", "").replace("$", "")
-        current_eth_portfolio = float(current_usd_portfolio)/float(current_eth_price)
-        list.append(current_eth_portfolio)
-        list.append(current_usd_portfolio)
-        list.append(current_eth_price)
+        eth_value = eth_value[4].split(">")
+        whole_number = eth_value[2]
+        whole_number = re.search(r'\d+', whole_number).group()
+        list.append(whole_number)
+    else:
+        list.append(None)
+
     if dropdownMenuBalance is not None:
         dropdownMenuBalance = dropdownMenuBalance.split()
         dropdownMenuBalance = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', dropdownMenuBalance[0]).group().replace(",", "").replace("$", "")
         list.append(dropdownMenuBalance)
+    else:
+        list.append(None)
+
     if high_bal_eth_value is not None:
         high_bal_eth_value = high_bal_eth_value.split()[0]
         list.append(high_bal_eth_value)
+    else:
+        list.append(None)
+
     if high_bal_usd_value is not None:
         high_bal_usd_value = high_bal_usd_value.split()[1].replace(",", "")
         list.append(high_bal_usd_value)
+    else:
+        list.append(None)
 
 
     return list
@@ -147,8 +158,17 @@ def details_to_file(f,item,url,account_details):
     [10] - eth in current_eth_portfolio     [11] - money in current_usd_portfolio
     [12] - current eth price                [13] - dropdownMenuBalance
     [14] - ETH all time high                [15] - USD all time high
+
+    print(str(account_details[0]))
+    print(str(account_details[1]))
+    print(str(account_details[2]))
+    print(str(account_details[3]))
+    print(str(account_details[4]))
+    print(str(account_details[5]))
+    print(str(account_details[6]))
+    print(str(account_details[7]))
     """
-    f.write(item.strip()+","+url+","+str(account_details[0])+","+str(account_details[1])+","+str(account_details[2])+","+str(account_details[3])+","+str(account_details[4])+","+str(account_details[5])+","+str(account_details[6])+","+str(account_details[7])+","+str(account_details[8])+","+str(account_details[9])+","+str(account_details[10])+","+str(account_details[11])+","+str(account_details[12])+","+str(account_details[13])+"\n")
+    f.write(item.strip()+","+url+","+str(account_details[0])+","+str(account_details[1])+","+str(account_details[2])+","+str(account_details[3])+","+str(account_details[4])+","+str(account_details[5])+","+str(account_details[6])+","+str(account_details[7])+"\n")
     return
 
 def main():
@@ -161,7 +181,7 @@ def main():
 
     #f = open("demofile2.csv", "a")
     f = open("results.csv", "w")
-    f.write("address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numhrsmins (lastTXN),hrsmins (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),numhrsmins (firstTXN),hrsmins (firstTXN),current_eth_portfolio,current_usd_portfolio,current_eth_price,dropdownMenuBalance,ethATH,usdATH\n")
+    f.write("address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),current_eth_portfolio,dropdownMenuBalance,ethATH,usdATH\n")
     i=1
     with open("addresses.csv") as file: #addresses only, no column names
       for item in file:
