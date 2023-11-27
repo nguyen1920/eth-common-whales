@@ -11,18 +11,15 @@ from selenium.common.exceptions import TimeoutException
 import time
 import re
 
-def balances(url):
+def balances(driver,url):
     """
     Web scrape etherscan for details and balances
     """
     list = []
-    options = webdriver.FirefoxOptions()
-    options.add_argument("-headless")
-    driver = webdriver.Firefox(options=options)
     driver.get(url)
 
     try:
-        span = driver.find_elements(By.CLASS_NAME, "text-muted")
+        span = WebDriverWait(driver,30).until(EC.visibility_of_any_elements_located((By.CLASS_NAME, "text-muted")))
     except:
         span = None
         lastTXN = None
@@ -45,7 +42,6 @@ def balances(url):
 
     list.append(lastTXN)
     list.append(firstTXN)
-
 
     try:
     	eth_value = driver.find_element(By.XPATH, "/html/body/main/section[3]/div[2]/div[1]/div/div/div[2]/div/div").get_attribute('innerHTML')
@@ -83,9 +79,6 @@ def balances(url):
         pass
 
     list.append(high_bal_usd_value)
-
-    driver.quit()
-
 
     return list
 
@@ -145,7 +138,6 @@ def cleanup(account_details):
     else:
         list.append(None)
 
-
     return list
 
 def details_to_file(f,item,url,account_details):
@@ -176,24 +168,30 @@ def main():
     Finds account details of address
     """
     # URL of the web page
-    #url = "https://etherscan.io/address/0xfa31a00a87c766579f0790be73c3763b3e952e94#analytics"
     url_base = "https://etherscan.io/address/"
 
-    #f = open("demofile2.csv", "a")
     f = open("results.csv", "w")
     f.write("address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),current_eth_portfolio,dropdownMenuBalance,ethATH,usdATH\n")
+
+    options = webdriver.FirefoxOptions()
+    options.add_argument("-headless")
+    driver = webdriver.Firefox(options=options)
+
     i=1
     with open("addresses.csv") as file: #addresses only, no column names
       for item in file:
         url = url_base+item.strip()+"#analytics"
-        account_details = balances(url)
+        original_window = driver.current_window_handle
+        driver.switch_to.new_window('tab')
+        account_details = balances(driver,url)
         account_details = cleanup(account_details)
         details_to_file(f,item,url,account_details)
-        time.sleep(0.05)
+        time.sleep(.5)
+        driver.close()
+        driver.switch_to.window(original_window)
         print("Success",i)
         i=i+1
     f.close()
-
-    #time.sleep(3)
+    driver.quit()
 
 main()
