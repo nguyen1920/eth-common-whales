@@ -291,30 +291,32 @@ def tokens_sum(f):
     line = 1
     list = []
     while(line<(len(readFile))):
+        publicName = 8
         tokenPOS = 11
         addressPOS = 12
         usdPOS = 13
         addressInfo = readFile[line].split(",")
-        while(addressPOS<len(addressInfo) and addressInfo[addressPOS] != "None"):
-            if(addressInfo[usdPOS] == "None" or addressInfo[usdPOS] == "None\n" or addressInfo[usdPOS] == ""):
-                addressInfo[usdPOS] = 0.00
-            address1 = addressInfo[addressPOS].rstrip()
-            address2 = address1.split("/")[2].split("?")[0]
-            if(address2 not in list):
-                list.append(addressInfo[tokenPOS].rstrip())
-                list.append(1)
-                list.append(address2)
-                usd_value = remove_periods(addressInfo[usdPOS])
-                list.append(float(str(usd_value).rstrip()))
-            elif(address2 in list):
-                listAddressIndex = list.index(address2)
-                listOccurrenceIndex = listAddressIndex - 1 #occurrence
-                listUSDIndex = listAddressIndex + 1 #USD
-                list[listOccurrenceIndex] = int(list[listOccurrenceIndex]) + 1
-                list[listUSDIndex] = float(list[listUSDIndex]) + float(addressInfo[addressPOS+1])
-            tokenPOS = tokenPOS + 3
-            addressPOS = addressPOS + 3
-            usdPOS = usdPOS + 3
+        if(addressInfo[publicName] == "None" or addressInfo[publicName] == "None\n"):
+            while(addressPOS<len(addressInfo) and addressInfo[addressPOS] != "None"):
+                if(addressInfo[usdPOS] == "None" or addressInfo[usdPOS] == "None\n" or addressInfo[usdPOS] == ""):
+                    addressInfo[usdPOS] = 0.00
+                address1 = addressInfo[addressPOS].rstrip()
+                address2 = address1.split("/")[2].split("?")[0]
+                if(address2 not in list):
+                    list.append(addressInfo[tokenPOS].rstrip())
+                    list.append(1)
+                    list.append(address2)
+                    usd_value = remove_periods(addressInfo[usdPOS])
+                    list.append(float(str(usd_value).rstrip()))
+                elif(address2 in list):
+                    listAddressIndex = list.index(address2)
+                    listOccurrenceIndex = listAddressIndex - 1 #occurrence
+                    listUSDIndex = listAddressIndex + 1 #USD
+                    list[listOccurrenceIndex] = int(list[listOccurrenceIndex]) + 1
+                    list[listUSDIndex] = float(list[listUSDIndex]) + float(addressInfo[addressPOS+1])
+                tokenPOS = tokenPOS + 3
+                addressPOS = addressPOS + 3
+                usdPOS = usdPOS + 3
         line = line + 1
 
     return list
@@ -329,15 +331,25 @@ def tokens_sum_file(list):
     f1.close()
     return
 
+def clean_addresses(address_filename):
+    f = open(address_filename, "r")
+    readFile = f.readlines()
+    readFile = list(dict.fromkeys(readFile))
+    with open("input_files/addresses.csv", "w") as outfile:
+        outfile.write("".join(readFile))
+    return
+
 def main():
     """
     Finds account details of address
     """
     # URL of the web page
     url_base = "https://etherscan.io/address/"
-    #'''
+    '''
     #input_days = input("Lookback (Example, 30 = 30 days from today): ")
     #input_money = input("Amount (Example, 1000000 = Only look at accounts with greater than $1000000): ")
+    address_filename = "input_files/addresses.csv"
+    clean_addresses(address_filename)
     
     filename = "results/results"+time.strftime("%Y%m%d-%H%M%S")+".csv"
     f = open(filename, "w")
@@ -348,7 +360,7 @@ def main():
     driver = webdriver.Firefox(options=options)
     
     i=1
-    with open("input_files/addresses.csv") as file: #addresses only, no column names
+    with open(address_filename) as file: #addresses only, no column names
       for item in file:
         url = url_base+item.strip()+"#analytics"
 
@@ -364,9 +376,11 @@ def main():
         i=i+1
     f.close()
     driver.quit()
-    #'''
-    f = open(filename, "r") #must close file and reopen as read only
+    '''
+    #f = open(filename, "r") #must close file and reopen as read only
     #f = open("results/results.csv", "r") #must close file and reopen as read only
+    f = open("results/results20240306-000053.csv", "r") #must close file and reopen as read only
+    
     list = tokens_sum(f)
 
     tokens_sum_file(list)
