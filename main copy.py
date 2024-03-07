@@ -18,7 +18,7 @@ def balances(driver,url):
     Web scrape etherscan for details and balances
     """
     list = []
-    driver.set_page_load_timeout(60)
+    driver.set_page_load_timeout(600)
     driver.get(url)
 
     try:
@@ -175,8 +175,23 @@ def cleanup(account_details):
 
     if dropdownMenuBalance is not None:
         dropdownMenuBalance = dropdownMenuBalance.split()
-        dropdownMenuBalance = re.search(r'(?:[\£\$\€]{1}[,\d]+.?\d*)', dropdownMenuBalance[0]).group().replace(",", "").replace("$", "")
-        list.append(dropdownMenuBalance)
+        dropdownMenuBalance = ''.join(dropdownMenuBalance)
+        i = 0
+        string = ""
+        rs_price = False
+        ls_price = False
+        
+        while(i<len(dropdownMenuBalance) and (rs_price == False or ls_price == False)): #purposely not using regex due to dynamic html complexities
+            if(dropdownMenuBalance[i] == '$'): #find price
+                ls_price = True
+            elif(dropdownMenuBalance[i] == "<" and ls_price == True): #end of price string
+                rs_price = True
+            elif(ls_price == True and rs_price == False): #add digits to string
+                string = string + dropdownMenuBalance[i]
+            i = i + 1
+        string = string.replace(",","")
+
+        list.append(remove_periods(string))
     else:
         list.append(None)
 
@@ -215,8 +230,28 @@ def cleanup(account_details):
         list.append(None)
         list.append(None)
         list.append(None)
-    
     return list
+
+def remove_periods(string):
+    string = str(string)
+    i=0
+    string1 = ""
+    firstPeriod = False
+    secondPeriod = False
+    while(i<len(string) and secondPeriod == False):
+        if(string[i].isdigit() and secondPeriod == False):
+            string1 = string1 + string[i]
+        elif(string[i] == "." and firstPeriod == False):
+            string1 = string1 + string[i]
+            firstPeriod = True
+        elif(string[i].isdigit() == False and firstPeriod == True):
+            secondPeriod == True
+        i=i+1
+
+    if(string1[-1] == '.'):
+        string1 = string1 + "00"
+
+    return string1
 
 def details_to_file(f,item,url,account_details):
     """
@@ -253,28 +288,35 @@ def tokens_sum(f):
     []need to make holders functionality
     '''
     readFile = f.readlines()
-
+    line = 1
     list = []
-    i = 0
-    while(i<len(readFile)):
-        line = readFile[i].strip().split(",")
-        print(line[11])
-        j = 11 #token, index at 11 to start token ownership list
-        j1 = 12 #address
-        j2 = 13 #usd value
-        while(j2<(len(line))):
-            if(line[j] in list):
-                tokenIndex = list.index(line[j])
-                if(list[tokenIndex+2] != "None" and line[j2] != "None"):
-                    list[tokenIndex+2] = str(float(list[tokenIndex+2]) + float(line[j2]))
-            else:
-                list.append(line[j])
-                list.append(line[j1])
-                list.append(line[j2])
-            j=j+3
-            j1=j1+3
-            j2=j2+3
-        i += 1
+    while(line<(len(readFile))):
+        tokenPOS = 11
+        addressPOS = 12
+        usdPOS = 13
+        addressInfo = readFile[line].split(",")
+        while(addressPOS<len(addressInfo) and addressInfo[addressPOS] != "None"):
+            if(addressInfo[usdPOS] == "None" or addressInfo[usdPOS] == "None\n" or addressInfo[usdPOS] == ""):
+                addressInfo[usdPOS] = 0.00
+            address1 = addressInfo[addressPOS].rstrip()
+            address2 = address1.split("/")[2].split("?")[0]
+            if(address2 not in list):
+                list.append(addressInfo[tokenPOS].rstrip())
+                list.append(1)
+                list.append(address2)
+                usd_value = remove_periods(addressInfo[usdPOS])
+                list.append(float(str(usd_value).rstrip()))
+            elif(address2 in list):
+                listAddressIndex = list.index(address2)
+                listOccurrenceIndex = listAddressIndex - 1 #occurrence
+                listUSDIndex = listAddressIndex + 1 #USD
+                list[listOccurrenceIndex] = int(list[listOccurrenceIndex]) + 1
+                list[listUSDIndex] = float(list[listUSDIndex]) + float(addressInfo[addressPOS+1])
+            tokenPOS = tokenPOS + 3
+            addressPOS = addressPOS + 3
+            usdPOS = usdPOS + 3
+        line = line + 1
+
     return list
 
 def tokens_sum_file(list):
@@ -282,9 +324,17 @@ def tokens_sum_file(list):
     f1.write("coin,numHolders,link,sum\n")
     i=0
     while(i<len(list)):
-        f1.write(str(list[i])+","+str(list[i+1])+","+str(list[i+2])+"\n")
-        i=i+3
+        f1.write(str(list[i])+","+str(list[i+1])+","+str(list[i+2])+","+str(list[i+3])+"\n")
+        i=i+4
     f1.close()
+    return
+
+def clean_addresses(address_filename):
+    f = open(address_filename, "r")
+    readFile = f.readlines()
+    readFile = list(dict.fromkeys(readFile))
+    with open("input_files/addresses.csv", "w") as outfile:
+        outfile.write("".join(readFile))
     return
 
 def main():
@@ -293,19 +343,22 @@ def main():
     """
     # URL of the web page
     url_base = "https://etherscan.io/address/"
-
+    #'''
     #input_days = input("Lookback (Example, 30 = 30 days from today): ")
     #input_money = input("Amount (Example, 1000000 = Only look at accounts with greater than $1000000): ")
+    address_filename = "input_files/addresses.csv"
+    clean_addresses(address_filename)
+    
     filename = "results/results"+time.strftime("%Y%m%d-%H%M%S")+".csv"
     f = open(filename, "w")
     f.write("address,url,numdayshrs (lastTXN),dayshrs (lastTXN),numdayshrs (firstTXN),dayshrs (firstTXN),current_eth_portfolio,dropdownMenuBalance,publicName,usdATH,ethATH,tokens\n")
-    '''
+    
     options = webdriver.FirefoxOptions()
     options.add_argument("-headless")
     driver = webdriver.Firefox(options=options)
     
     i=1
-    with open("input_files/addresses.csv") as file: #addresses only, no column names
+    with open(address_filename) as file: #addresses only, no column names
       for item in file:
         url = url_base+item.strip()+"#analytics"
 
@@ -321,10 +374,11 @@ def main():
         i=i+1
     f.close()
     driver.quit()
-    '''
-    #f = open(filename, "r") #must close file and reopen as read only
-    f = open("results/results20240127-075546.csv", "r") #must close file and reopen as read only
+    #'''
+    f = open(filename, "r") #must close file and reopen as read only
+    #f = open("results/results.csv", "r") #must close file and reopen as read only
     list = tokens_sum(f)
+
     tokens_sum_file(list)
     f.close()
     
